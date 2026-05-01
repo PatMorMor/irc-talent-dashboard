@@ -74,23 +74,23 @@ div_options = ["All"] + [f"Div {k} — {v}" for k, v in DIVISIONS.items()]
 selected_div = st.sidebar.selectbox("Division", div_options)
 
 st.sidebar.markdown("**Filter by Level**")
-levels = sorted([l for l in df['level'].dropna().unique()])
-level_labels = {
-    0: "Level 0 — Support",
-    1: "Level 1 — Officer",
-    2: "Level 2 — Senior Officer",
-    3: "Level 3 — Manager / Expert",
-    4: "Level 4 — Director / Leader",
-}
-level_options = [level_labels.get(int(l), f"Level {int(l)}") for l in levels]
-selected_levels = st.sidebar.multiselect("Level (leave blank = all)", level_options)
+LEVEL_GROUPS = [
+    ("Leader — Levels 3 & 4", [3, 4]),
+    ("Senior Expert — Level 2", [2]),
+    ("Junior Expert — Level 1", [1]),
+    ("Support — Level 0", [0]),
+]
+selected_level_groups = st.sidebar.multiselect(
+    "Level (leave blank = all)",
+    [label for label, _ in LEVEL_GROUPS]
+)
 
 st.sidebar.markdown("**Filter by Category**")
 all_cats = sorted([c for c in df['category'].dropna().unique()])
 selected_cats = st.sidebar.multiselect("Category (leave blank = all)", all_cats)
 
 st.sidebar.markdown("**Filter by Source**")
-source_opt = st.sidebar.radio("Show", ["All", "Staff only (in organigram)", "Associates & Board only"])
+source_opt = st.sidebar.radio("Show", ["All", "Staff only (in organigram)", "Staff and Associates", "Board"])
 
 st.sidebar.markdown("---")
 st.sidebar.markdown(f"**{len(df)} people total** in database")
@@ -99,10 +99,13 @@ st.sidebar.markdown(f"**{len(df)} people total** in database")
 filtered = df.copy()
 
 # Source filter
+is_board = filtered['web_title'].fillna('').str.contains('Supervisory Board', case=False)
 if source_opt == "Staff only (in organigram)":
     filtered = filtered[filtered['in_excel'] == 1]
-elif source_opt == "Associates & Board only":
-    filtered = filtered[filtered['in_excel'] == 0]
+elif source_opt == "Staff and Associates":
+    filtered = filtered[(filtered['in_excel'] == 1) | ((filtered['in_excel'] == 0) & ~is_board)]
+elif source_opt == "Board":
+    filtered = filtered[is_board]
 
 # Division filter
 if selected_div != "All":
@@ -114,8 +117,11 @@ if selected_cats:
     filtered = filtered[filtered['category'].isin(selected_cats)]
 
 # Level filter
-if selected_levels:
-    level_nums = [int(l.split("—")[0].replace("Level", "").strip()) for l in selected_levels]
+if selected_level_groups:
+    level_nums = []
+    for label, nums in LEVEL_GROUPS:
+        if label in selected_level_groups:
+            level_nums.extend(nums)
     filtered = filtered[filtered['level'].isin(level_nums)]
 
 # Search filter — split into tokens so each word matched independently
