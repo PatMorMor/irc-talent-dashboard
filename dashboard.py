@@ -195,7 +195,8 @@ else:
                                 unsafe_allow_html=True)
 
             # Bio (expandable)
-            bio = row.get('bio') or ''
+            bio = row.get('bio')
+            bio = bio if isinstance(bio, str) else ''
             if bio and len(bio) > 20:
                 with st.expander("Bio"):
                     # Highlight search term in bio
