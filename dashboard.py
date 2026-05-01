@@ -186,11 +186,13 @@ else:
 
                 # Source badges
                 badges = []
-                if row.get('in_excel'): badges.append("📋 Organigram")
-                if row.get('on_web'): badges.append("🌐 Web profile")
+                if row.get('in_excel'): badges.append("<span class='tag'>📋 Organigram</span>")
+                if row.get('on_web') and row.get('profile_url'):
+                    badges.append(f"<a href='{row['profile_url']}' target='_blank' style='text-decoration:none'><span class='tag'>🌐 Web profile</span></a>")
+                elif row.get('on_web'):
+                    badges.append("<span class='tag'>🌐 Web profile</span>")
                 if badges:
-                    st.markdown(" ".join(f"<span class='tag'>{b}</span>" for b in badges),
-                                unsafe_allow_html=True)
+                    st.markdown(" ".join(badges), unsafe_allow_html=True)
 
             # Bio (expandable)
             bio = row.get('bio')
