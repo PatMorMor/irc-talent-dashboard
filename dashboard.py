@@ -74,16 +74,9 @@ div_options = ["All"] + [f"Div {k} — {v}" for k, v in DIVISIONS.items()]
 selected_div = st.sidebar.selectbox("Division", div_options)
 
 st.sidebar.markdown("**Filter by Level**")
-LEVEL_GROUPS = [
-    ("Leader — Levels 3 & 4", [3, 4]),
-    ("Senior Expert — Level 2", [2]),
-    ("Junior Expert — Level 1", [1]),
-    ("Support — Level 0", [0]),
-]
-selected_level_groups = st.sidebar.multiselect(
-    "Level (leave blank = all)",
-    [label for label, _ in LEVEL_GROUPS]
-)
+LEVEL_ORDER = ["Leader", "Senior Expert", "Junior Expert", "Support"]
+level_options = [l for l in LEVEL_ORDER if l in df['level'].values]
+selected_level_groups = st.sidebar.multiselect("Level (leave blank = all)", level_options)
 
 st.sidebar.markdown("**Filter by Category**")
 all_cats = sorted([c for c in df['category'].dropna().unique()])
@@ -118,11 +111,7 @@ if selected_cats:
 
 # Level filter
 if selected_level_groups:
-    level_nums = []
-    for label, nums in LEVEL_GROUPS:
-        if label in selected_level_groups:
-            level_nums.extend(nums)
-    filtered = filtered[filtered['level'].isin(level_nums)]
+    filtered = filtered[filtered['level'].isin(selected_level_groups)]
 
 # Search filter — split into tokens so each word matched independently
 # "water resource management" matches "water resources management" etc.
@@ -190,7 +179,7 @@ else:
                 if pd.notna(row.get('division')):
                     meta_parts.append(division_label(row['division']))
                 if pd.notna(row.get('level')):
-                    meta_parts.append(level_labels.get(int(row['level']), f"Level {int(row['level'])}"))
+                    meta_parts.append(str(row['level']))
                 if pd.notna(row.get('unit')) and row['unit']:
                     meta_parts.append(str(row['unit']))
                 if meta_parts:
