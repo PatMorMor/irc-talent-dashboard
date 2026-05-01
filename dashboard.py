@@ -39,7 +39,6 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ── Data loading ──────────────────────────────────────────────────────────────
-@st.cache_data
 def load_data():
     conn = sqlite3.connect(DB_PATH)
     df = pd.read_sql_query("SELECT * FROM people ORDER BY name", conn)
