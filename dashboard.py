@@ -75,7 +75,8 @@ selected_div = st.sidebar.selectbox("Division", div_options)
 
 st.sidebar.markdown("**Filter by Level**")
 LEVEL_ORDER = ["Leader", "Senior Expert", "Junior Expert", "Support"]
-level_options = [l for l in LEVEL_ORDER if l in df['level'].values]
+existing_levels = df['level'].dropna().unique().tolist()
+level_options = [l for l in LEVEL_ORDER if l in existing_levels]
 selected_level_groups = st.sidebar.multiselect("Level (leave blank = all)", level_options)
 
 st.sidebar.markdown("**Filter by Category**")
