@@ -47,6 +47,13 @@ def load_data():
 
 df = load_data()
 
+ALL_TAGS = sorted(set(
+    tag.strip()
+    for tags_str in df['tags'].dropna()
+    for tag in tags_str.split(',')
+    if tag.strip()
+))
+
 DIVISIONS = {
     100: "Netherlands (HQ)",
     200: "Ghana",
@@ -80,6 +87,9 @@ st.sidebar.markdown("**Filter by Category**")
 all_cats = sorted([c for c in df['category'].dropna().unique()])
 selected_cats = st.sidebar.multiselect("Category (leave blank = all)", all_cats)
 
+st.sidebar.markdown("**Filter by Expertise Tag**")
+selected_tags = st.sidebar.multiselect("Tag (leave blank = all)", ALL_TAGS)
+
 st.sidebar.markdown("**Filter by Source**")
 source_opt = st.sidebar.radio("Show", ["All", "Staff only (in organigram)", "Staff and Associates", "Board"])
 
@@ -111,6 +121,13 @@ if selected_cats:
 if selected_level_groups:
     filtered = filtered[filtered['level'].isin(selected_level_groups)]
 
+# Tag filter — exact match against tag list
+if selected_tags:
+    def has_tag(tags_str):
+        person_tags = {t.strip() for t in str(tags_str).split(',')}
+        return any(t in person_tags for t in selected_tags)
+    filtered = filtered[filtered['tags'].fillna('').apply(has_tag)]
+
 # Search filter — split into tokens so each word matched independently
 # "water resource management" matches "water resources management" etc.
 if search:
@@ -123,7 +140,8 @@ if search:
             filtered['role'].fillna('').str.lower().str.contains(token) |
             filtered['web_title'].fillna('').str.lower().str.contains(token) |
             filtered['category'].fillna('').str.lower().str.contains(token) |
-            filtered['unit'].fillna('').str.lower().str.contains(token)
+            filtered['unit'].fillna('').str.lower().str.contains(token) |
+            filtered['tags'].fillna('').str.lower().str.contains(token)
         )
         filtered = filtered[mask]
 
@@ -183,6 +201,15 @@ else:
                 if meta_parts:
                     st.markdown(f"<div class='person-meta'>{' · '.join(meta_parts)}</div>",
                                 unsafe_allow_html=True)
+
+                # Expertise tags
+                tags_raw = row.get('tags')
+                if isinstance(tags_raw, str) and tags_raw.strip():
+                    pills = "".join(
+                        f"<span class='tag'>{t.strip()}</span>"
+                        for t in tags_raw.split(",") if t.strip()
+                    )
+                    st.markdown(f"<div style='margin-top:4px'>{pills}</div>", unsafe_allow_html=True)
 
                 # Source badges
                 badges = []
